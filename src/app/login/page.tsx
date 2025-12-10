@@ -3,43 +3,41 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { authManager, LoginCredentials } from '@/lib/auth';
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      await authManager.login(data);
+      console.log('Attempting login with:', formData);
+      await authManager.login(formData);
+      console.log('Login successful, redirecting...');
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      console.error('Login error:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
@@ -55,7 +53,7 @@ export default function LoginPage() {
             Sign in to SISORE
           </h2>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-800">{error}</div>
@@ -67,30 +65,30 @@ export default function LoginPage() {
                 Email address
               </label>
               <input
-                {...register('email')}
+                name="email"
                 type="email"
                 autoComplete="email"
+                value={formData.email}
+                onChange={handleChange}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-[#0f936c] focus:border-[#0f936c] focus:z-10 sm:text-sm"
                 placeholder="Email address"
+                required
               />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-              )}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
                 Password
               </label>
               <input
-                {...register('password')}
+                name="password"
                 type="password"
                 autoComplete="current-password"
+                value={formData.password}
+                onChange={handleChange}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-[#0f936c] focus:border-[#0f936c] focus:z-10 sm:text-sm"
                 placeholder="Password"
+                required
               />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-              )}
             </div>
           </div>
 

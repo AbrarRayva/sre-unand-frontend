@@ -4,19 +4,20 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
   position?: 'P' | 'VP' | 'SEC' | 'DIRECTOR' | 'MANAGER' | 'STAFF';
-  permissions?: string[];
-  division_id?: number;
-  sub_division_id?: number;
   division?: {
     id: string;
     name: string;
   };
-  subdivision?: {
+  subDivision?: {
     id: string;
     name: string;
   };
+  roles?: any[];
+  role?: string;
+  permissions?: string[];
+  division_id?: string;
+  sub_division_id?: string;
 }
 
 export interface LoginCredentials {
@@ -28,15 +29,18 @@ export interface RegisterData {
   name: string;
   email: string;
   password: string;
-  position?: string;
-  divisionId?: string;
-  subdivisionId?: string;
+  position?: 'P' | 'VP' | 'SEC' | 'DIRECTOR' | 'MANAGER' | 'STAFF';
+  division_id?: number;
+  sub_division_id?: number;
 }
 
 export interface AuthResponse {
-  user: User;
-  token: string;
-  message?: string;
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+  };
 }
 
 class AuthManager {
@@ -90,18 +94,34 @@ class AuthManager {
   }
 
   // Authentication methods
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  async login(credentials: LoginCredentials): Promise<void> {
     try {
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+      console.log('Making login request to:', '/auth/login', credentials);
       
-      // Store token and user data
-      this.setToken(response.data.token);
-      this.setUser(response.data.user);
+      // Try with fetch first for debugging
+      const fetchResponse = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials)
+      });
       
-      return response.data;
+      console.log('Fetch response status:', fetchResponse.status);
+      const responseData = await fetchResponse.json();
+      console.log('Fetch response data:', responseData);
+      
+      if (responseData.success && responseData.data) {
+        this.setToken(responseData.data.token);
+        this.setUser(responseData.data.user);
+        console.log('Login successful');
+      } else {
+        const errorMsg = responseData.message || 'Login failed';
+        console.log('Login failed:', errorMsg);
+        throw new Error(errorMsg);
+      }
     } catch (error) {
-      this.clearToken();
-      this.clearUser();
+      console.error('Login error in authManager:', error);
       throw error;
     }
   }
@@ -111,8 +131,8 @@ class AuthManager {
       const response = await apiClient.post<AuthResponse>('/auth/register', data);
       
       // Store token and user data
-      this.setToken(response.data.token);
-      this.setUser(response.data.user);
+      this.setToken(response.data.data.token);
+      this.setUser(response.data.data.user);
       
       return response.data;
     } catch (error) {
@@ -137,6 +157,17 @@ class AuthManager {
     }
   }
 
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    try {
+      await apiClient.put('/auth/change-password', {
+        oldPassword,
+        newPassword,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async fetchMe(): Promise<User> {
     try {
       const response = await apiClient.get<User>('/auth/me');
@@ -157,10 +188,7 @@ class AuthManager {
     await apiClient.post('/auth/reset-password', { token, password });
   }
 
-  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-    await apiClient.post('/auth/change-password', { oldPassword, newPassword });
-  }
-
+  
   // Check if user is authenticated
   isAuthenticated(): boolean {
     return !!this.getToken();
@@ -197,7 +225,7 @@ class AuthManager {
   // Check if user has any of the specified roles
   hasAnyRole(roles: string[]): boolean {
     const user = this.getUser();
-    return user ? roles.includes(user.role) : false;
+    return user ? roles.includes(user.role || '') : false;
   }
 }
 

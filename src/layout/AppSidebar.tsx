@@ -1,53 +1,85 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { useSidebar } from "../context/SidebarContext";
-import { rbacManager, MenuItem } from "../lib/rbac";
-import {
-  ChevronDownIcon,
-  HorizontaLDots,
-} from "../icons/index";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter, usePathname } from 'next/navigation';
+import { useSidebar } from '@/context/SidebarContext';
+import { authManager } from '@/lib/auth';
+import { menuConfig, filterMenuByPermissions, MenuItem } from '@/lib/menuConfig';
 
 // Icon components for menu items
 const MenuIcons = {
-  dashboard: (
+  HomeIcon: () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
     </svg>
   ),
-  'document-text': (
+  BanknotesIcon: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  ClipboardDocumentListIcon: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    </svg>
+  ),
+  NewspaperIcon: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+    </svg>
+  ),
+  DocumentIcon: () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ),
-  folder: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-    </svg>
-  ),
-  briefcase: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-    </svg>
-  ),
-  banknotes: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-  ),
-  users: (
+  UsersIcon: () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     </svg>
   ),
-  'building-office': (
+  BuildingOfficeIcon: () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     </svg>
   ),
-  user: (
+  UserIcon: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  ),
+  ChevronDownIcon: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  ),
+  HorizontalDotsIcon: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+    </svg>
+  ),
+  briefcase: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  ),
+  banknotes: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  users: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  ),
+  'building-office': () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  user: () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
@@ -57,14 +89,32 @@ const MenuIcons = {
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const [user, setUser] = useState<any>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 
-  // Get accessible menu items based on user permissions
-  const accessibleMenuItems = rbacManager.getAccessibleMenuItems();
+  useEffect(() => {
+    const loadUserAndMenu = async () => {
+      try {
+        const userData = await authManager.fetchMe();
+        console.log('User data for menu:', userData);
+        console.log('User permissions:', userData?.permissions);
+        console.log('User role:', userData?.role);
+        setUser(userData);
+        const filteredMenu = filterMenuByPermissions(menuConfig, userData);
+        console.log('Filtered menu:', filteredMenu);
+        setMenuItems(filteredMenu);
+      } catch (error) {
+        console.error('Failed to load user menu:', error);
+      }
+    };
 
-  const renderMenuItems = (items: MenuItem[]) => (
+    loadUserAndMenu();
+  }, []);
+
+  const renderMenuItems = (items: any[]) => (
     <ul className="flex flex-col gap-4">
       {items.map((item, index) => (
-        <li key={item.id}>
+        <li key={item.key}>
           {item.children && item.children.length > 0 ? (
             <button
               onClick={() => handleSubmenuToggle(index, "main")}
@@ -85,10 +135,10 @@ const AppSidebar: React.FC = () => {
                     : "menu-item-icon-inactive"
                 }`}
               >
-                {item.icon && MenuIcons[item.icon as keyof typeof MenuIcons]}
+                {item.icon && MenuIcons[item.icon as keyof typeof MenuIcons]()}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{item.title}</span>
+                <span className={`menu-item-text`}>{item.label}</span>
               )}
               {(isExpanded || isHovered || isMobileOpen) && (
                 <span className={`ml-auto w-5 h-5 transition-transform duration-200 flex items-center justify-center ${
@@ -97,28 +147,28 @@ const AppSidebar: React.FC = () => {
                     ? "rotate-180 text-[#0f936c]"
                     : ""
                 }`}>
-                  <ChevronDownIcon />
+                  <>{MenuIcons.ChevronDownIcon()}</>
                 </span>
               )}
             </button>
           ) : (
             <Link
-              href={item.path}
+              href={item.route}
               className={`menu-item group ${
-                isActive(item.path) ? "menu-item-active" : "menu-item-inactive"
+                isActive(item.route) ? "menu-item-active" : "menu-item-inactive"
               }`}
             >
               <span
                 className={`${
-                  isActive(item.path)
+                  isActive(item.route)
                     ? "menu-item-icon-active"
                     : "menu-item-icon-inactive"
                 }`}
               >
-                {item.icon && MenuIcons[item.icon as keyof typeof MenuIcons]}
+                {item.icon && MenuIcons[item.icon as keyof typeof MenuIcons]()}
               </span>
               {(isExpanded || isHovered || isMobileOpen) && (
-                <span className={`menu-item-text`}>{item.title}</span>
+                <span className={`menu-item-text`}>{item.label}</span>
               )}
             </Link>
           )}
@@ -136,7 +186,7 @@ const AppSidebar: React.FC = () => {
               }}
             >
               <ul className="mt-2 space-y-1 ml-9">
-                {item.children.map((subItem) => (
+                {item.children.map((subItem: any) => (
                   <li key={subItem.id}>
                     <Link
                       href={subItem.path}
@@ -172,10 +222,10 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     // Check if the current path matches any submenu item
     let submenuMatched = false;
-    accessibleMenuItems.forEach((item, index) => {
+    menuItems.forEach((item, index) => {
       if (item.children) {
         item.children.forEach((subItem) => {
-          if (isActive(subItem.path)) {
+          if (isActive(subItem.route || '')) {
             setOpenSubmenu({
               type: "main",
               index,
@@ -190,7 +240,7 @@ const AppSidebar: React.FC = () => {
     if (!submenuMatched) {
       setOpenSubmenu(null);
     }
-  }, [pathname, isActive, accessibleMenuItems]);
+  }, [pathname, isActive, menuItems]);
 
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened
@@ -280,10 +330,10 @@ const AppSidebar: React.FC = () => {
                 {isExpanded || isHovered || isMobileOpen ? (
                   "Menu"
                 ) : (
-                  <HorizontaLDots />
+                  <>{MenuIcons.HorizontalDotsIcon()}</>
                 )}
               </h2>
-              {renderMenuItems(accessibleMenuItems)}
+              {renderMenuItems(menuItems)}
             </div>
           </div>
         </nav>

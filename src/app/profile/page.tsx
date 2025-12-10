@@ -91,7 +91,7 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Sub Division</p>
-                    <p className="text-gray-900 dark:text-white">{user?.subdivision?.name || 'Not assigned'}</p>
+                    <p className="text-gray-900 dark:text-white">{user?.subDivision?.name || 'Not assigned'}</p>
                   </div>
                 </div>
               </div>

@@ -41,13 +41,47 @@ export default function DashboardPage() {
         const currentUser = authManager.getUser();
         setUser(currentUser);
 
-        // Fetch dashboard stats
-        const statsResponse = await apiClient.get<DashboardStats>('/dashboard/stats');
-        setStats(statsResponse.data);
+        // Fetch dashboard stats with fallback
+        try {
+          const statsResponse = await fetch('http://localhost:5000/api/dashboard/stats', {
+            headers: {
+              'Authorization': `Bearer ${authManager.getToken()}`
+            }
+          });
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            setStats(statsData.data || statsResponse);
+          } else {
+            throw new Error('Stats endpoint not available');
+          }
+        } catch (error) {
+          console.log('Dashboard stats not available, using defaults');
+          // Use default values
+          setStats({
+            articlesCount: 0,
+            documentsCount: 0,
+            workProgramsCount: 0,
+            cashPeriodsCount: 0,
+            usersCount: 0,
+            pendingTransactions: 0,
+          });
+        }
 
-        // Fetch recent activity
-        const activityResponse = await apiClient.get<RecentActivity[]>('/dashboard/recent-activity');
-        setRecentActivity(activityResponse.data);
+        // Fetch recent activity with fallback
+        try {
+          const activityResponse = await fetch('http://localhost:5000/api/dashboard/recent-activity', {
+            headers: {
+              'Authorization': `Bearer ${authManager.getToken()}`
+            }
+          });
+          if (activityResponse.ok) {
+            const activityData = await activityResponse.json();
+            setRecentActivity(activityData.data || activityData);
+          }
+        } catch (error) {
+          console.log('Recent activity not available');
+          setRecentActivity([]);
+        }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
         // Set default values on error
