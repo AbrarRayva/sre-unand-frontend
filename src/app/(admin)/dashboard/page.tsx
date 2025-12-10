@@ -22,7 +22,7 @@ interface RecentActivity {
 }
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<DashboardStats>({
     articlesCount: 0,
     documentsCount: 0,
@@ -67,7 +67,7 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, []);
 
-  const StatCard = ({ title, value, icon, color }: {
+  const StatCard = ({ title, value, icon, color, link }: {
     title: string;
     value: number | string;
     icon: React.ReactNode;
@@ -116,7 +116,7 @@ export default function DashboardPage() {
           Welcome back, {user?.name || 'User'}!
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          Here&apos;s what&apos;s happening in your organization today.
+          Here's what's happening in your organization today.
         </p>
       </div>
 

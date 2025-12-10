@@ -40,11 +40,10 @@ export default function CreateArticlePage() {
     setError('');
 
     try {
-      await apiClient.post('/articles/admin', data);
+      const response = await apiClient.post('/articles/admin', data);
       router.push('/articles/admin');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create article. Please try again.';
-      setError(errorMessage);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create article. Please try again.');
     } finally {
       setIsLoading(false);
     }

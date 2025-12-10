@@ -53,9 +53,12 @@ export default function EditArticlePage() {
         const response = await apiClient.get<Article>(`/articles/admin/${params.id}`);
         setArticle(response.data);
         reset(response.data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load article';
-        setError(errorMessage);
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          setError('Article not found');
+        } else {
+          setError('Failed to load article');
+        }
       } finally {
         setIsFetching(false);
       }
@@ -73,9 +76,8 @@ export default function EditArticlePage() {
     try {
       await apiClient.put(`/articles/admin/${params.id}`, data);
       router.push('/articles/admin');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update article. Please try again.';
-      setError(errorMessage);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update article. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -87,9 +89,8 @@ export default function EditArticlePage() {
     try {
       await apiClient.delete(`/articles/admin/${params.id}`);
       router.push('/articles/admin');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to delete article.';
-      setError(errorMessage);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete article.');
     }
   };
 

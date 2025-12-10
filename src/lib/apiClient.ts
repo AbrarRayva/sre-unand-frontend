@@ -56,15 +56,15 @@ class ApiClient {
 
   private getToken(): string | null {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('token') || sessionStorage.getItem('token');
+      return localStorage.getItem('sisore_token') || sessionStorage.getItem('sisore_token');
     }
     return null;
   }
 
   private clearToken(): void {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
+      localStorage.removeItem('sisore_token');
+      sessionStorage.removeItem('sisore_token');
     }
   }
 

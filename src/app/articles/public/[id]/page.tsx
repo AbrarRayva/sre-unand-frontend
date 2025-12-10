@@ -29,9 +29,12 @@ export default function ArticleDetailPage() {
       try {
         const response = await apiClient.get<Article>(`/articles/published/${params.id}`);
         setArticle(response.data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load article';
-        setError(errorMessage);
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          setError('Article not found');
+        } else {
+          setError('Failed to load article');
+        }
       } finally {
         setIsLoading(false);
       }

@@ -31,8 +31,8 @@ export default function DocumentsPage() {
       try {
         const response = await apiClient.get<Document[]>('/documents');
         setDocuments(response.data);
-      } catch (err) {
-        console.error('Failed to fetch documents:', err);
+      } catch (error) {
+        console.error('Failed to fetch documents:', error);
       } finally {
         setIsLoading(false);
       }
@@ -53,8 +53,8 @@ export default function DocumentsPage() {
     try {
       await apiClient.delete(`/documents/${id}`);
       setDocuments(documents.filter(doc => doc.id !== id));
-    } catch (err) {
-      console.error('Failed to delete document:', err);
+    } catch (error) {
+      console.error('Failed to delete document:', error);
     }
   };
 

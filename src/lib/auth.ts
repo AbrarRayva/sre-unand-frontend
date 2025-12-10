@@ -5,8 +5,10 @@ export interface User {
   name: string;
   email: string;
   role: string;
-  position?: string;
+  position?: 'P' | 'VP' | 'SEC' | 'DIRECTOR' | 'MANAGER' | 'STAFF';
   permissions?: string[];
+  division_id?: number;
+  sub_division_id?: number;
   division?: {
     id: string;
     name: string;

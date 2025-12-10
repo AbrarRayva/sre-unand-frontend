@@ -82,7 +82,7 @@ export default function UploadDocumentPage() {
         });
       }, 200);
 
-      await apiClient.upload('/documents', formData);
+      const response = await apiClient.upload('/documents', formData);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -90,9 +90,8 @@ export default function UploadDocumentPage() {
       setTimeout(() => {
         router.push('/documents');
       }, 500);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to upload document. Please try again.';
-      setError(errorMessage);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to upload document. Please try again.');
       setUploadProgress(0);
     } finally {
       setIsLoading(false);

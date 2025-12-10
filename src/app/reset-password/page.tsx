@@ -49,9 +49,8 @@ export default function ResetPasswordPage() {
     try {
       await authManager.resetPassword(token, data.password);
       router.push('/login');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to reset password. Please try again.';
-      setError(errorMessage);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
     } finally {
       setIsLoading(false);
     }
