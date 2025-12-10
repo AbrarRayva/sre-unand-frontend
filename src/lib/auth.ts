@@ -94,34 +94,32 @@ class AuthManager {
   }
 
   // Authentication methods
-  async login(credentials: LoginCredentials): Promise<void> {
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      console.log('Making login request to:', '/auth/login', credentials);
-      
-      // Try with fetch first for debugging
       const fetchResponse = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials),
       });
+
+      if (!fetchResponse.ok) {
+        throw new Error('Login failed');
+      }
+
+      const apiResponse = await fetchResponse.json();
       
-      console.log('Fetch response status:', fetchResponse.status);
-      const responseData = await fetchResponse.json();
-      console.log('Fetch response data:', responseData);
-      
-      if (responseData.success && responseData.data) {
-        this.setToken(responseData.data.token);
-        this.setUser(responseData.data.user);
-        console.log('Login successful');
+      if (apiResponse.success) {
+        const authData = apiResponse.data;
+        this.setToken(authData.token);
+        this.setUser(authData.user);
+        return apiResponse;
       } else {
-        const errorMsg = responseData.message || 'Login failed';
-        console.log('Login failed:', errorMsg);
-        throw new Error(errorMsg);
+        throw new Error(apiResponse.message || 'Login failed');
       }
     } catch (error) {
-      console.error('Login error in authManager:', error);
+      console.error('Login error:', error);
       throw error;
     }
   }
@@ -170,9 +168,21 @@ class AuthManager {
 
   async fetchMe(): Promise<User> {
     try {
-      const response = await apiClient.get<User>('/auth/me');
-      this.setUser(response.data);
-      return response.data;
+      const fetchResponse = await fetch('http://localhost:5000/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${this.getToken()}`
+        }
+      });
+      
+      if (!fetchResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+      
+      const responseData = await fetchResponse.json();
+      const userData = responseData.data || responseData;
+      
+      this.setUser(userData);
+      return userData;
     } catch (error) {
       this.clearToken();
       this.clearUser();

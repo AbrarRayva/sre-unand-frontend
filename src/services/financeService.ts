@@ -150,11 +150,8 @@ class FinanceService {
       formData.append('proof', data.proof);
     }
 
-    const response = await apiClient.post<Transaction>('/cash/transactions', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Use upload method to properly handle multipart/form-data
+    const response = await apiClient.upload<Transaction>('/cash/transactions', formData);
     return response.data;
   }
 
@@ -165,7 +162,12 @@ class FinanceService {
 
   async getStatistics(periodId: number) {
     const response = await apiClient.get<PaymentStatistics>(`/cash/admin/statistics?period_id=${periodId}`);
-    return response.data;
+    // Ensure period has valid late_fee_per_day (fallback to 0 if missing)
+    const data = response.data;
+    if (data.period && (data.period.late_fee_per_day === undefined || data.period.late_fee_per_day === null)) {
+      data.period.late_fee_per_day = 0;
+    }
+    return data;
   }
 
   // File upload helper
@@ -173,12 +175,12 @@ class FinanceService {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await apiClient.post<{url: string}>('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data.url;
+    // Use apiClient.upload to let axios set the proper multipart boundary
+    const response = await apiClient.upload<{url: string}>('/upload', formData);
+    // apiClient.upload returns the response body directly. Backend may return { url } or { data: { url } }
+    // Be defensive when extracting the URL
+    const body: any = response as any;
+    return (body.url ?? body.data?.url) as string;
   }
 }
 

@@ -12,10 +12,10 @@ export interface MenuItem {
 
 export const menuConfig: MenuItem[] = [
   {
-    key: 'dashboard',
-    label: 'Dashboard',
-    icon: 'HomeIcon',
-    route: '/dashboard',
+    key: 'profile',
+    label: 'Profile',
+    icon: 'UserIcon',
+    route: '/profile',
   },
   {
     key: 'finance',
@@ -34,14 +34,18 @@ export const menuConfig: MenuItem[] = [
         label: 'Manajemen Kas',
         route: '/finance/admin',
         requiredPermissions: ['cash.manage'],
-        requiredRoles: ['Finance', 'ADMIN'],
       },
       {
         key: 'cash-periods',
         label: 'Periode Kas',
         route: '/finance/periods',
         requiredPermissions: ['cash.manage'],
-        requiredRoles: ['Finance', 'ADMIN'],
+      },
+      {
+        key: 'cash-statistics',
+        label: 'Statistik',
+        route: '/finance/statistics',
+        requiredPermissions: ['cash.manage'],
       },
     ],
   },
@@ -49,7 +53,6 @@ export const menuConfig: MenuItem[] = [
     key: 'work-programs',
     label: 'Program Kerja',
     icon: 'ClipboardDocumentListIcon',
-    requiredPermissions: ['work_programs.view'],
     children: [
       {
         key: 'programs-list',
@@ -62,7 +65,6 @@ export const menuConfig: MenuItem[] = [
         label: 'Kelola Proker',
         route: '/work-programs/admin',
         requiredPermissions: ['work_programs.manage'],
-        requiredRoles: ['Director', 'ADMIN'],
       },
     ],
   },
@@ -70,20 +72,17 @@ export const menuConfig: MenuItem[] = [
     key: 'articles',
     label: 'Artikel',
     icon: 'NewspaperIcon',
-    requiredPermissions: ['articles.view'],
     children: [
       {
         key: 'articles-public',
         label: 'Artikel Publik',
         route: '/articles/public',
-        requiredPermissions: ['articles.view'],
       },
       {
         key: 'articles-admin',
         label: 'Kelola Artikel',
         route: '/articles/admin',
         requiredPermissions: ['articles.manage'],
-        requiredRoles: ['Media', 'ADMIN'],
       },
     ],
   },
@@ -91,7 +90,6 @@ export const menuConfig: MenuItem[] = [
     key: 'documents',
     label: 'Arsip Dokumen',
     icon: 'DocumentIcon',
-    requiredPermissions: ['documents.view'],
     children: [
       {
         key: 'documents-list',
@@ -104,7 +102,6 @@ export const menuConfig: MenuItem[] = [
         label: 'Upload Dokumen',
         route: '/documents/upload',
         requiredPermissions: ['documents.manage'],
-        requiredRoles: ['Secretary', 'ADMIN'],
       },
     ],
   },
@@ -112,22 +109,18 @@ export const menuConfig: MenuItem[] = [
     key: 'users',
     label: 'Manajemen User',
     icon: 'UsersIcon',
-    requiredPermissions: ['users.view'],
-    requiredRoles: ['HR', 'ADMIN'],
     children: [
       {
         key: 'users-list',
         label: 'Daftar User',
         route: '/users',
         requiredPermissions: ['users.view'],
-        requiredRoles: ['HR', 'ADMIN'],
       },
       {
         key: 'users-manage',
         label: 'Kelola User',
         route: '/users/admin',
         requiredPermissions: ['users.manage'],
-        requiredRoles: ['HR', 'ADMIN'],
       },
     ],
   },
@@ -135,7 +128,6 @@ export const menuConfig: MenuItem[] = [
     key: 'divisions',
     label: 'Divisi',
     icon: 'BuildingOfficeIcon',
-    requiredPermissions: ['divisions.view'],
     children: [
       {
         key: 'divisions-list',
@@ -145,25 +137,25 @@ export const menuConfig: MenuItem[] = [
       },
     ],
   },
-  {
-    key: 'profile',
-    label: 'Profile',
-    icon: 'UserIcon',
-    route: '/profile',
-  },
 ];
 
 export const hasPermission = (user: User | null, permissions?: string[], roles?: string[]): boolean => {
   if (!user) return false;
   
-  // Check roles
+  // Check roles first (from roles array or single role field)
+  const userRoles = user.roles || (user.role ? [user.role] : []);
   if (roles && roles.length > 0) {
-    const hasRole = roles.includes(user.role);
+    const hasRole = roles.some(role => userRoles.includes(role));
     if (!hasRole) return false;
   }
   
-  // Check permissions
+  // Check permissions (with fallback for ADMIN having all permissions)
   if (permissions && permissions.length > 0) {
+    // ADMIN has all permissions
+    if (userRoles.includes('ADMIN')) {
+      return true;
+    }
+    
     const userPermissions = user.permissions || [];
     const hasAllPermissions = permissions.every(permission => 
       userPermissions.includes(permission)

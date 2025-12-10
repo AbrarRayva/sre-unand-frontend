@@ -187,16 +187,16 @@ const AppSidebar: React.FC = () => {
             >
               <ul className="mt-2 space-y-1 ml-9">
                 {item.children.map((subItem: any) => (
-                  <li key={subItem.id}>
+                  <li key={subItem.key}>
                     <Link
-                      href={subItem.path}
+                      href={subItem.route}
                       className={`menu-dropdown-item ${
-                        isActive(subItem.path)
+                        isActive(subItem.route)
                           ? "menu-dropdown-item-active"
                           : "menu-dropdown-item-inactive"
                       }`}
                     >
-                      {subItem.title}
+                      {subItem.label}
                     </Link>
                   </li>
                 ))}
