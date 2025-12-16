@@ -53,20 +53,8 @@ export const menuConfig: MenuItem[] = [
     key: 'work-programs',
     label: 'Program Kerja',
     icon: 'ClipboardDocumentListIcon',
-    children: [
-      {
-        key: 'programs-list',
-        label: 'Daftar Proker',
-        route: '/work-programs',
-        requiredPermissions: ['work_programs.view'],
-      },
-      {
-        key: 'programs-manage',
-        label: 'Kelola Proker',
-        route: '/work-programs/admin',
-        requiredPermissions: ['work_programs.manage'],
-      },
-    ],
+    route: '/work-programs',
+    requiredPermissions: ['work_programs.view'],
   },
   {
     key: 'articles',
@@ -90,39 +78,15 @@ export const menuConfig: MenuItem[] = [
     key: 'documents',
     label: 'Arsip Dokumen',
     icon: 'DocumentIcon',
-    children: [
-      {
-        key: 'documents-list',
-        label: 'Daftar Dokumen',
-        route: '/documents',
-        requiredPermissions: ['documents.view'],
-      },
-      {
-        key: 'documents-upload',
-        label: 'Upload Dokumen',
-        route: '/documents/upload',
-        requiredPermissions: ['documents.manage'],
-      },
-    ],
+    route: '/documents',
+    requiredPermissions: ['documents.view'],
   },
   {
     key: 'users',
     label: 'Manajemen User',
     icon: 'UsersIcon',
-    children: [
-      {
-        key: 'users-list',
-        label: 'Daftar User',
-        route: '/users',
-        requiredPermissions: ['users.view'],
-      },
-      {
-        key: 'users-manage',
-        label: 'Kelola User',
-        route: '/users/admin',
-        requiredPermissions: ['users.manage'],
-      },
-    ],
+    route: '/users',
+    requiredPermissions: ['users.view'],
   },
   {
     key: 'divisions',

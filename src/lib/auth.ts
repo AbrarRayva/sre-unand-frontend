@@ -13,6 +13,10 @@ export interface User {
     id: string;
     name: string;
   };
+  sub_division?: {  // Backend compatibility (snake_case)
+    id: string;
+    name: string;
+  };
   roles?: any[];
   role?: string;
   permissions?: string[];
