@@ -17,8 +17,8 @@ export interface User {
     id: string;
     name: string;
   };
-  roles?: any[];
-  role?: string;
+  roles?: string[]; // PERBAIKAN: Pastikan ini array string untuk menampung ["ADMIN"]
+  role?: string;    // Tetap dipertahankan untuk kompatibilitas legacy
   permissions?: string[];
   division_id?: string;
   sub_division_id?: string;
@@ -132,7 +132,6 @@ class AuthManager {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/register', data);
       
-      // Store token and user data
       this.setToken(response.data.data.token);
       this.setUser(response.data.data.user);
       
@@ -146,13 +145,11 @@ class AuthManager {
     try {
       await apiClient.post('/auth/logout');
     } catch (error) {
-      // Continue with logout even if API call fails
       console.error('Logout API call failed:', error);
     } finally {
       this.clearToken();
       this.clearUser();
       
-      // Redirect to login
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
@@ -202,30 +199,34 @@ class AuthManager {
     await apiClient.post('/auth/reset-password', { token, password });
   }
 
-  
   // Check if user is authenticated
   isAuthenticated(): boolean {
     return !!this.getToken();
   }
+
+  /**
+   * PERBAIKAN LOGIKA ROLE (ARRAY)
+   * Mendukung pengecekan pada properti "roles" (array) dan "role" (string)
+   */
 
   // Check if user has specific permission
   hasPermission(permission: string): boolean {
     const user = this.getUser();
     if (!user) return false;
     
-    // Admin role has all permissions
-    if (user.role === 'ADMIN') return true;
+    // Admin memiliki semua izin
+    const isAdmin = (user.roles && Array.isArray(user.roles) && user.roles.includes('ADMIN')) || 
+                    (user.role === 'ADMIN');
+
+    if (isAdmin) return true;
     
-    // Check specific permission
     return user.permissions?.includes(permission) || false;
   }
 
-  // Check if user has any of the specified permissions
   hasAnyPermission(permissions: string[]): boolean {
     return permissions.some(permission => this.hasPermission(permission));
   }
 
-  // Check if user has all specified permissions
   hasAllPermissions(permissions: string[]): boolean {
     return permissions.every(permission => this.hasPermission(permission));
   }
@@ -233,13 +234,25 @@ class AuthManager {
   // Check if user has specific role
   hasRole(role: string): boolean {
     const user = this.getUser();
-    return user?.role === role;
+    if (!user) return false;
+
+    // Cek di array roles (utama) atau string role (legacy)
+    const hasInArray = Array.isArray(user.roles) && user.roles.includes(role);
+    const hasInString = user.role === role;
+
+    return hasInArray || hasInString;
   }
 
   // Check if user has any of the specified roles
   hasAnyRole(roles: string[]): boolean {
     const user = this.getUser();
-    return user ? roles.includes(user.role || '') : false;
+    if (!user) return false;
+
+    // Cek apakah ada role user yang cocok dengan daftar roles yang diminta
+    const hasInArray = Array.isArray(user.roles) && user.roles.some(r => roles.includes(r));
+    const hasInString = roles.includes(user.role || '');
+
+    return hasInArray || hasInString;
   }
 }
 

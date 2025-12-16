@@ -132,13 +132,15 @@ class UserService {
   }
 
   // Role Management
+  // PERBAIKAN: Path disesuaikan dengan pendaftaran di userRoutes.js (Backend)
   async getRoles() {
-    const response = await apiClient.get<Role[]>('/admin/roles');
+    const response = await apiClient.get<Role[]>('/admin/users/roles');
     return response.data;
   }
 
+  // Jika Anda juga membutuhkan permissions, pastikan rutenya ada di backend
   async getPermissions() {
-    const response = await apiClient.get<Permission[]>('/admin/permissions');
+    const response = await apiClient.get<Permission[]>('/admin/users/permissions');
     return response.data;
   }
 

@@ -49,7 +49,7 @@ export const menuItems: MenuItem[] = [
     title: 'Work Programs',
     icon: 'briefcase',
     path: '/work-programs',
-    permissions: ['workprograms.manage'],
+    permissions: ['work_programs.manage'],
   },
   {
     id: 'cash',
@@ -111,13 +111,21 @@ export const menuItems: MenuItem[] = [
 ];
 
 class RBACManager {
+  /**
+   * Helper private untuk mengecek status Admin secara konsisten
+   * Sesuai JSON Backend: user.roles = ["ADMIN"]
+   */
+  private isAdmin(user: any): boolean {
+    return user && Array.isArray(user.roles) && user.roles.includes('ADMIN');
+  }
+
   // Check if user can access a specific menu item
   canAccessMenuItem(menuItem: MenuItem): boolean {
     const user = authManager.getUser();
     if (!user) return false;
 
     // Admin can access everything
-    if (user.role === 'ADMIN') return true;
+    if (this.isAdmin(user)) return true;
 
     // Check if user has required permissions
     if (menuItem.permissions && menuItem.permissions.length > 0) {
@@ -144,9 +152,14 @@ class RBACManager {
 
       // If item has children, filter them too
       if (item.children && item.children.length > 0) {
-        item.children = item.children.filter(child => this.canAccessMenuItem(child));
-        // Only show parent if it has accessible children or is itself accessible
-        return item.children.length > 0 || this.canAccessMenuItem(item);
+        // Create a copy to avoid mutating original menuItems
+        const accessibleChildren = item.children.filter(child => this.canAccessMenuItem(child));
+        
+        // Update the item's children with only accessible ones
+        item.children = accessibleChildren;
+
+        // Only show parent if it has accessible children
+        return accessibleChildren.length > 0;
       }
 
       return true;
@@ -176,10 +189,10 @@ class RBACManager {
       'ADMIN': ['*'], // All permissions
       'MEMBER': [],
       'HR': ['users.manage', 'divisions.manage'],
-      'Secretary': ['documents.manage', 'workprograms.manage'],
+      'Secretary': ['documents.manage', 'work_programs.manage'],
       'Media': ['articles.manage'],
       'Finance': ['cash.manage', 'cash.verify'],
-      'Director': ['workprograms.manage', 'cash.manage', 'documents.manage'],
+      'Director': ['work_programs.manage', 'cash.manage', 'documents.manage'],
     };
 
     return rolePermissions[role] || [];
@@ -190,10 +203,17 @@ class RBACManager {
     const user = authManager.getUser();
     if (!user) return false;
 
-    if (user.role === 'ADMIN') return true;
+    if (this.isAdmin(user)) return true;
 
-    const rolePermissions = this.getRolePermissions(user.role);
-    return rolePermissions.includes('*') || rolePermissions.includes(permission);
+    // Cek setiap role yang dimiliki user di array roles
+    if (user.roles && Array.isArray(user.roles)) {
+      return user.roles.some((roleName: string) => {
+        const rolePermissions = this.getRolePermissions(roleName);
+        return rolePermissions.includes('*') || rolePermissions.includes(permission);
+      });
+    }
+
+    return false;
   }
 
   // Get user's effective permissions (from role + assigned permissions)
@@ -201,14 +221,22 @@ class RBACManager {
     const user = authManager.getUser();
     if (!user) return [];
 
-    if (user.role === 'ADMIN') return ['*'];
+    if (this.isAdmin(user)) return ['*'];
 
-    const rolePermissions = this.getRolePermissions(user.role);
+    let allPermissions: string[] = [];
+
+    // Kumpulkan permission dari semua roles
+    if (user.roles && Array.isArray(user.roles)) {
+      user.roles.forEach((roleName: string) => {
+        allPermissions = [...allPermissions, ...this.getRolePermissions(roleName)];
+      });
+    }
+
     const userPermissions = user.permissions || [];
-
+    
     // Combine and deduplicate permissions
-    const allPermissions = [...rolePermissions, ...userPermissions];
-    return [...new Set(allPermissions)];
+    const combined = [...allPermissions, ...userPermissions];
+    return [...new Set(combined)];
   }
 
   // Check if user can perform a specific action on a resource
